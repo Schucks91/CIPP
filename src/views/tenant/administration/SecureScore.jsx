@@ -15,7 +15,7 @@ import {
   CRow,
 } from '@coreui/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCheck, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faTimes, faExclamation } from '@fortawesome/free-solid-svg-icons'
 import { CippTable } from 'src/components/tables'
 import { CippPage } from 'src/components/layout/CippPage'
 import { useGenericGetRequestQuery, useLazyGenericPostRequestQuery } from 'src/store/api/app'
@@ -27,9 +27,6 @@ import { ModalService } from 'src/components/utilities'
 import { CellTip, cellGenericFormatter } from 'src/components/tables/CellGenericFormat'
 import { CippCallout } from 'src/components/layout'
 import CippPrettyCard from 'src/components/contentcards/CippPrettyCard'
-import { TableModalButton } from 'src/components/buttons'
-import DOMPurify from 'dompurify'
-import ReactHtmlParser from 'react-html-parser'
 
 const SecureScore = () => {
   const textRef = useRef()
@@ -67,12 +64,6 @@ const SecureScore = () => {
       NoPagination: true,
     },
   })
-
-  const sanitizeHtml = (html) => {
-    var sanitizedHtml = DOMPurify.sanitize(html)
-    var parsedHtml = ReactHtmlParser(sanitizedHtml)
-    return parsedHtml
-  }
 
   useEffect(() => {
     if (isSuccess) {
@@ -201,11 +192,6 @@ const SecureScore = () => {
       cell: cellGenericFormatter(),
       exportSelector: 'actionUrl',
     },
-    {
-      name: 'Updates',
-      selector: (row) => row?.controlStateUpdates,
-      cell: cellGenericFormatter(),
-    },
   ]
 
   return (
@@ -292,7 +278,7 @@ const SecureScore = () => {
         </CCol>
       </CRow>
       <CippPage title="Report Results" tenantSelector={false}>
-        {viewMode && translateData.controlScores?.length > 1 && isSuccess && isSuccessTranslation && (
+        {viewMode && translateData.controlScores.length > 1 && isSuccess && isSuccessTranslation && (
           <CCard className="content-card">
             <CCardHeader className="d-flex justify-content-between align-items-center">
               <CCardTitle>Best Practice Report</CCardTitle>
@@ -300,7 +286,7 @@ const SecureScore = () => {
             <CCardBody>
               <CippTable
                 reportName="SecureScore"
-                dynamicColumns={true}
+                dynamicColumns={false}
                 columns={columns}
                 data={translateData.controlScores}
                 isFetching={isFetching}
@@ -349,16 +335,23 @@ const SecureScore = () => {
                         <CCardText>
                           <h5>Description</h5>
                           <small className="text-medium-emphasis">
-                            <div>
-                              {sanitizeHtml(`${info.description} ${info.implementationStatus}`)}
-                            </div>
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: `${info.description} ${info.implementationStatus}`,
+                              }}
+                            />
                           </small>
                         </CCardText>
                         {info.scoreInPercentage !== 100 && (
                           <CCardText>
                             <h5>Remediation Recommendation</h5>
                             <small className="mb-3 text-medium-emphasis">
-                              {<div className="mb-3">{sanitizeHtml(info.remediation)}</div>}
+                              {
+                                <div
+                                  className="mb-3"
+                                  dangerouslySetInnerHTML={{ __html: info.remediation }}
+                                />
+                              }
                             </small>
                           </CCardText>
                         )}
@@ -399,12 +392,6 @@ const SecureScore = () => {
                         <CButton onClick={() => openResolution(info)} className="me-3">
                           Change Status
                         </CButton>
-
-                        <TableModalButton
-                          title="Updates"
-                          data={info?.controlStateUpdates ?? []}
-                          className="me-3"
-                        />
                       </CCardFooter>
                     </CCard>
                   </CCol>
